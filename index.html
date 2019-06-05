@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>search</title>
+</head>
+<body>
+<label for="dest">Destination</label>
+<input type="text" id="dest" class="destinationField" name="dest" required>
+<button type="button" id="searchBtn" class="searchBtn">
+    Search
+</button>
+<p id="somelog" class="somelog"></p>
+
+<script>
+    const search = document.getElementById('searchBtn');
+
+    const destinationInput = document.querySelector('.destinationField');
+
+    function callSearch() {
+        let textOutput = document.getElementById("somelog");
+        textOutput.textContent = "callSearch " + destinationInput.value
+        let url = new URL('http://localhost:8080/search');
+        url.searchParams.append("destination", destinationInput.value)
+        fetch(url.toString())
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (myJson) {
+                console.log(JSON.stringify(myJson));
+            });
+    }
+
+    search.addEventListener("click", callSearch);
+</script>
+
+</body>
+</html>
