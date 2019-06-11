@@ -3,8 +3,6 @@ package hotel
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
-	"fmt"
 )
 
 type regionRepositoryInt interface {
@@ -25,11 +23,11 @@ func NewRepository(db *sql.DB) regionRepository {
 func (repository regionRepository) update(regions Regions) error {
 	tx, err := repository.db.Begin()
 	if err != nil {
-		return errors.New(fmt.Sprintf("tx begin err %v", err))
+		return err
 	}
 	_, err = tx.Exec(`delete from regions`)
 	if err != nil {
-		return errors.New(fmt.Sprintf("error deleting %v", err))
+		return err
 	}
 	query := `insert into regions (id, name, data) values ($1, $2, $3)`
 
@@ -37,12 +35,12 @@ func (repository regionRepository) update(regions Regions) error {
 		data, err := json.Marshal(value)
 		_, err = tx.Exec(query, value.Id, value.Name, data)
 		if err != nil {
-			return errors.New(fmt.Sprintf(" insert error %v", err))
+			return err
 		}
 	}
 	err = tx.Commit()
 	if err != nil {
-		return errors.New(fmt.Sprintf("commit error %v", err))
+		return err
 	}
 	return nil
 }
@@ -50,7 +48,6 @@ func (repository regionRepository) update(regions Regions) error {
 func (repository regionRepository) get(dest string) (Region, error) {
 	tx, err := repository.db.Begin()
 	if err != nil {
-		fmt.Println("tx begin error", err)
 		return Region{}, err
 	}
 	var b []byte
@@ -58,18 +55,15 @@ func (repository regionRepository) get(dest string) (Region, error) {
 	row := tx.QueryRow(query, dest)
 	err = row.Scan(&b)
 	if err != nil {
-		fmt.Println("tx scan error ", err)
 		return Region{}, err
 	}
 	var region Region
 	err = json.Unmarshal(b, &region)
 	if err != nil {
-		fmt.Println("json unmarshal error ", err)
 		return Region{}, err
 	}
 	err = tx.Commit()
 	if err != nil {
-		fmt.Println("tx commit error", err)
 		return Region{}, err
 	}
 	return region, nil

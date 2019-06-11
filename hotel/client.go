@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+const regionsEndpoint = "regions"
+
 type clientInt interface {
 	getRegions() (Regions, error)
 }
@@ -28,7 +30,7 @@ func NewClient(url string) *client {
 }
 
 func (client client) getRegions() (Regions, error) {
-	request, err := createRequest(fmt.Sprintf("%s/regions", client.url))
+	request, err := createRequest(fmt.Sprintf("%s/%s", client.url, regionsEndpoint))
 	if err != nil {
 		return Regions{}, err
 	}

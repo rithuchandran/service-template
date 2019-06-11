@@ -16,10 +16,12 @@ import (
 	"syscall"
 )
 
+const expediaClientUrl = "https://test.ean.com/2.2"
+
 func main() {
 	repo := hotel.NewRepository(getDb())
 
-	expediaClient := hotel.NewClient("https://test.ean.com/2.2")
+	expediaClient := hotel.NewClient(expediaClientUrl)
 	regionService := hotel.NewRegionService(repo, expediaClient)
 	regionHandler := hotel_handler.NewRegionHandler(regionService)
 	router := route.New(mux.NewRouter())

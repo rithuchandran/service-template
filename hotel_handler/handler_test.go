@@ -42,12 +42,12 @@ func (s *RegionHandlerTestSuite) TestUpdate() {
 	}
 
 	for _, tc := range tt {
-		s.Run(tc.testDescription, func() {
+		s.T().Run(tc.testDescription, func(t *testing.T) {
 			rr := httptest.NewRecorder()
 			s.service.On("Update").Times(1).Return(tc.mockError)
 			handler.Update(rr, req)
-			s.service.AssertExpectations(s.T())
-			assert.Equal(s.T(), tc.expectedResponse, rr.Body)
+			s.service.AssertExpectations(t)
+			assert.Equal(t, tc.expectedResponse, rr.Body)
 		})
 	}
 }
@@ -73,12 +73,12 @@ func (s *RegionHandlerTestSuite) TestSearch() {
 		{"ShouldReturnError", errors.New("error"), Region{}, expectedErrorResponse},
 	}
 	for _, tc := range tt {
-		s.Run(tc.testDescription, func() {
+		s.T().Run(tc.testDescription, func(t *testing.T) {
 			rr := httptest.NewRecorder()
 			s.service.On("Search", "first").Times(1).Return(tc.mockRegion, tc.mockError)
 			handler.Search(rr, req)
-			s.service.AssertExpectations(s.T())
-			assert.Equal(s.T(), tc.expectedResponse, rr.Body)
+			s.service.AssertExpectations(t)
+			assert.Equal(t, tc.expectedResponse, rr.Body)
 		})
 	}
 }
