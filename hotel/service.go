@@ -22,6 +22,9 @@ func (s *regionService) Search(destination string) (Region, error) {
 }
 
 func (s *regionService) Update() error {
-	reg := s.client.getRegions()
+	reg, err := s.client.getRegions()
+	if err != nil {
+		return err
+	}
 	return s.repository.update(reg)
 }

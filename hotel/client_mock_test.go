@@ -13,11 +13,14 @@ type mockClient struct {
 	mock.Mock
 }
 
-func (m *mockClient) getRegions() Regions {
+func (m *mockClient) getRegions() (Regions, error) {
 	fmt.Println("mockClient getRegions called")
 	args := m.Called()
 	fmt.Println("args extracted are :", args[0])
-	return args[0].(Regions)
+	if args[1] != nil {
+		return args[0].(Regions), args[1].(error)
+	}
+	return args[0].(Regions), nil
 }
 
 func MockHTTPClient(handler http.Handler) (*http.Client, func()) {

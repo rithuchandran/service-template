@@ -10,8 +10,9 @@ type MockRegionRepository struct {
 }
 
 func (m *MockRegionRepository) update(regions Regions) error {
-	fmt.Println("Mocked get destination names function")
+	fmt.Println("Mocked repository update function")
 	args := m.Called(regions)
+	fmt.Println("Args extracted are: ", args[0])
 	if args[0] != nil {
 		return args[0].(error)
 	}
@@ -19,7 +20,7 @@ func (m *MockRegionRepository) update(regions Regions) error {
 }
 
 func (m *MockRegionRepository) get(dest string) (Region, error) {
-	fmt.Println("Mocked get destination names function")
+	fmt.Println("Mocked repository get function")
 	args := m.Called(dest)
 	fmt.Println("Args extracted are: ", args[0], args[1])
 	if args[1] != nil {

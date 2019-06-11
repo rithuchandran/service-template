@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"net/http"
 	"strconv"
@@ -14,7 +15,7 @@ import (
 )
 
 type clientInt interface {
-	getRegions() Regions
+	getRegions() (Regions, error)
 }
 
 type client struct {
@@ -26,53 +27,71 @@ func NewClient(url string) *client {
 	return &client{url: url, Client: &http.Client{}}
 }
 
-func (client client) getRegions() Regions {
-	request := createRequest(fmt.Sprintf("%s/regions", client.url))
+func (client client) getRegions() (Regions, error) {
+	request, err := createRequest(fmt.Sprintf("%s/regions", client.url))
+	if err != nil {
+		return Regions{}, err
+	}
 
 	var regions Regions
+	retries := 5
 	for ok := true; ok; {
 		resp, err := client.Do(request)
 		if err != nil || resp.StatusCode != http.StatusOK {
-			fmt.Println("Do error", err)
-			continue
+			if retries > 0 {
+				retries--
+				continue
+			} else {
+				return Regions{}, errors.New(fmt.Sprintf("Do error : %v ", err))
+			}
 		}
-		request, ok = getNextLink(resp)
+		request, ok, err = getNextLink(resp)
+		if err != nil {
+			return Regions{}, err
+		}
+		err = decode(resp, &regions)
+		if err != nil {
+			return Regions{}, err
+		}
 
-		decode(resp, &regions)
-
-		_ = resp.Body.Close()
+		resp.Body.Close()
 	}
-	return regions
+	return regions, nil
 }
 
-func decode(resp *http.Response, regions *Regions) {
+func decode(resp *http.Response, regions *Regions) error {
 
 	if resp.Header.Get("Content-Encoding") == "gzip" {
 		gzipReader, err := gzip.NewReader(resp.Body)
 		if err != nil {
-			fmt.Println("gzip error", err)
+			return err
 		}
 		resp.Body = gzipReader
 	}
 	err := json.NewDecoder(resp.Body).Decode(regions)
 	if err != nil {
-		fmt.Println("json decoding error", err)
+		return err
 	}
+	return nil
 }
 
-func getNextLink(resp *http.Response) (*http.Request, bool) {
+func getNextLink(resp *http.Response) (*http.Request, bool, error) {
 	link := resp.Header.Get("Link")
 	sep := func(c rune) bool {
 		return c == ';' || c == '<' || c == '>' || c == '"'
 	}
 	if values := strings.FieldsFunc(link, sep); len(values) > 0 {
-		return createRequest(values[0]), true
+		req, err := createRequest(values[0])
+		return req, true, err
 	}
-	return &http.Request{}, false
+	return &http.Request{}, false, nil
 }
 
-func createRequest(target string) *http.Request {
-	request, _ := http.NewRequest("GET", target, nil)
+func createRequest(target string) (*http.Request, error) {
+	request, err := http.NewRequest("GET", target, nil)
+	if err != nil {
+		return &http.Request{}, err
+	}
 
 	request.Header.Add("Accept", "application/json")
 	request.Header.Add("Accept-Encoding", "gzip")
@@ -86,7 +105,7 @@ func createRequest(target string) *http.Request {
 	q.Add("include", "property_ids_expanded")
 	request.URL.RawQuery = q.Encode()
 
-	return request
+	return request, nil
 }
 
 var now = func() time.Time {
